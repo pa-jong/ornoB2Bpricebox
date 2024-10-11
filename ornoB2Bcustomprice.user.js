@@ -7,7 +7,7 @@
 // @match        https://b2b.orno.pl/*
 // @require      https://pa-jong.github.io/OrnoB2Bpricebox/ornoB2Bcustomprice.user.js
 // @updateURL    https://pa-jong.github.io/OrnoB2Bpricebox/update.json
-// @downloadURL  https://pa-jong.github.io/OrnoB2Bpricebox/ornoB2Bcustomprice.user.jss // URL to the actual userscript
+// @downloadURL  https://pa-jong.github.io/OrnoB2Bpricebox/ornoB2Bcustomprice.user.js // URL to the actual userscript
 // @grant        none
 // ==/UserScript==
 

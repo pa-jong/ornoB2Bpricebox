@@ -2,7 +2,11 @@
 // @name         PIM ORNO Custom Price Box
 // @namespace    http://tampermonkey.net/
 // @version      1.2
-// @description  Ukrywa wszystkie oryginalne divy ceny i wstawia nowe divy z niestandardowymi cenami i rabatami dla każdego produktu na stronie z możliwością zarządzania widocznością cen z okienka ustawień. Teraz z możliwością skalowania i przeciągania okienka ustawień oraz zapamiętywania jego pozycji i rozmiaru.
+// @description  Skrypt jest przeznaczony do modyfikacji wyświetlania cen na stronie https://b2b.orno.pl.
+// @description  Ukrywa oryginalne elementy ceny i dodaje nowe z niestandardowymi cenami i rabatami.
+// @description  Umożliwia użytkownikowi dostosowanie widoczności różnych cen (fabrycznej, zakupu, internetowej, allegro) oraz pokazanie cen brutto.
+// @description  Posiada funkcjonalność przeciągania i skalowania okienka ustawień oraz zapamiętuje jego pozycję i rozmiar.
+// @description  Jeśli masz dodatkowe pytania lub potrzebujesz modyfikacji, daj znać!
 // @author       Pa-Jong
 // @match        https://b2b.orno.pl/*
 // @require      https://pa-jong.github.io/ornoB2Bpricebox/ornoB2Bcustomprice.user.js

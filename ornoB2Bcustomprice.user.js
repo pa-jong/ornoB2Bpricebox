@@ -5,9 +5,9 @@
 // @description  Ukrywa wszystkie oryginalne divy ceny i wstawia nowe divy z niestandardowymi cenami i rabatami dla każdego produktu na stronie z możliwością zarządzania widocznością cen z okienka ustawień.
 // @author       Łukasz Kordos
 // @match        https://b2b.orno.pl/*
-// @require      https://pa-jong.github.io/OrnoB2Bpricebox/ornoB2Bcustomprice.user.js
-// @updateURL    https://pa-jong.github.io/OrnoB2Bpricebox/update.json
-// @downloadURL  https://pa-jong.github.io/OrnoB2Bpricebox/ornoB2Bcustomprice.user.js // URL to the actual userscript
+// @require      https://pa-jong.github.io/ornoB2Bpricebox/ornoB2Bcustomprice.user.js
+// @updateURL    https://pa-jong.github.io/ornoB2Bpricebox/update.json
+// @downloadURL  https://pa-jong.github.io/ornoB2Bpricebox/ornoB2Bcustomprice.user.js // URL to the actual userscript
 // @grant        none
 // ==/UserScript==
 

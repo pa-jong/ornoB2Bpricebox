@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PIM ORNO Custom Price Box
 // @namespace    http://tampermonkey.net/
-// @version      1.6
+// @version      1.1
 // @description  Ukrywa wszystkie oryginalne divy ceny i wstawia nowe divy z niestandardowymi cenami i rabatami dla każdego produktu na stronie z możliwością zarządzania widocznością cen z okienka ustawień.
 // @author       Łukasz Kordos
 // @match        https://b2b.orno.pl/*

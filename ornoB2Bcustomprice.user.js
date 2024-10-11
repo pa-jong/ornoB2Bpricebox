@@ -48,7 +48,7 @@
             <label><input type="checkbox" id="pokazCenaZakupu"> Zakupu</label><br>
             <label><input type="checkbox" id="pokazCenaInternet" checked> Internet</label><br>
             <label><input type="checkbox" id="pokazCenaAllegro" checked> Allegro</label><br>
-            <label><input type="checkbox" id="pokazCenyBrutto" checked> Pokaż brutto</label><br>
+            <label><input type="checkbox" id="pokazCenyBrutto" checked> Pokaż ceny brutto</label><br>
         `;
 
         document.body.appendChild(ustawieniaDiv);
@@ -196,5 +196,7 @@
         setTimeout(() => {
             popup.remove();
         }, 3000);
+    }
+})();
     }
 })();

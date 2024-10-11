@@ -39,7 +39,7 @@
         ustawieniaDiv.style.padding = '10px';
         ustawieniaDiv.style.zIndex = '1000';
         ustawieniaDiv.style.resize = 'both';
-        ustawieniaDiv.style.overflow = 'auto';
+        ustawieniaDiv.style.overflow = 'hidden';
         ustawieniaDiv.id = 'ustawieniaDiv';
 
         ustawieniaDiv.innerHTML = `
@@ -48,18 +48,14 @@
             <label><input type="checkbox" id="pokazCenaZakupu"> Zakupu</label><br>
             <label><input type="checkbox" id="pokazCenaInternet" checked> Internet</label><br>
             <label><input type="checkbox" id="pokazCenaAllegro" checked> Allegro</label><br>
-            <label><input type="checkbox" id="pokazCenyBrutto" checked> Pokaż ceny brutto</label><br>
+            <label><input type="checkbox" id="pokazCenyBrutto" checked> Pokaż brutto</label><br>
         `;
 
         document.body.appendChild(ustawieniaDiv);
 
         // Dodaj funkcjonalność przeciągania
         ustawieniaDiv.addEventListener('mousedown', function(e) {
-            // Sprawdź, czy użytkownik próbuje skalować
-            let rect = ustawieniaDiv.getBoundingClientRect();
-            let isResizing = e.clientX > rect.right - 10 || e.clientY > rect.bottom - 10; // Sprawdza, czy kliknięto blisko krawędzi
-
-            if (!isResizing && e.target === ustawieniaDiv) {
+            if (e.target === ustawieniaDiv) {
                 e.preventDefault();
                 let offsetX = e.clientX - ustawieniaDiv.getBoundingClientRect().left;
                 let offsetY = e.clientY - ustawieniaDiv.getBoundingClientRect().top;
@@ -75,21 +71,36 @@
                     document.removeEventListener('mousemove', onMouseMove);
                     localStorage.setItem('ustawieniaDivX', ustawieniaDiv.style.left);
                     localStorage.setItem('ustawieniaDivY', ustawieniaDiv.style.top);
+                    localStorage.setItem('ustawieniaDivWidth', ustawieniaDiv.style.width);
+                    localStorage.setItem('ustawieniaDivHeight', ustawieniaDiv.style.height);
                 }, { once: true });
             }
         });
 
-        // Zapisz nowy rozmiar okienka po jego zmianie
-        ustawieniaDiv.addEventListener('mouseup', function() {
-            localStorage.setItem('ustawieniaDivWidth', ustawieniaDiv.style.width);
-            localStorage.setItem('ustawieniaDivHeight', ustawieniaDiv.style.height);
+        // Nasłuchuj zmiany w checkboxach
+        ustawieniaDiv.querySelectorAll('input[type=checkbox]').forEach(checkbox => {
+            checkbox.addEventListener('change', uruchomSkrypt);
         });
+    }
+
+    // Funkcja formatująca cenę
+    function formatujCene(cena) {
+        const cenaNum = Number(cena);
+        if (!isNaN(cenaNum)) {
+            return cenaNum.toFixed(2).replace('.', ',') + ' zł';
+        } else {
+            console.error('Podana cena nie jest liczbą:', cena);
+            return cena;
+        }
     }
 
     function uruchomSkrypt() {
         console.log("Uruchamianie głównej funkcji skryptu...");
 
         let priceBoxes = document.querySelectorAll('.price-box.price-final_price');
+
+        // Usuń poprzednie elementy cen
+        document.querySelectorAll('.custom-price-box').forEach(el => el.remove());
 
         priceBoxes.forEach((priceBox) => {
             console.log("Znaleziono element: .price-box.price-final_price");
@@ -127,29 +138,63 @@
                 let pokazCenaAllegro = document.getElementById('pokazCenaAllegro').checked;
                 let pokazCenyBrutto = document.getElementById('pokazCenyBrutto').checked;
 
-                function formatujCene(cena) {
-                    return cena.toFixed(2).replace('.', ',') + ' zł';
-                }
-
                 let newPriceBox = document.createElement('div');
                 newPriceBox.className = 'custom-price-box';
                 newPriceBox.innerHTML = `
                     <table class="price-table">
-                        ${pokazCenaKatalogowa ? `<tr class="price-box price-final_price"><td style="width: 33%" class="price-label">Fabryczna</td><td style="width: 33%" class="price">${formatujCene(cenaKatalogowaNetto)}</td>${pokazCenyBrutto ? `<td style="width: 33%" class="price">${formatujCene(cenaKatalogowaBrutto)}</td>` : ''}</tr>` : ''}
-                        ${pokazCenaZakupu ? `<tr class="price-box price-final_price"><td style="width: 33%" class="price-label">Zakupu</td><td style="width: 33%" class="price">${formatujCene(cenaZakupuNetto)}</td>${pokazCenyBrutto ? `<td style="width: 33%" class="price">${formatujCene(cenaZakupuBrutto)}</td>` : ''}</tr>` : ''}
-                        ${pokazCenaInternet ? `<tr class="price-box price-final_price"><td style="width: 33%" class="price-label">Internet</td><td style="width: 33%" class="price">${formatujCene(cenaInternetNetto)}</td>${pokazCenyBrutto ? `<td style="width: 33%" class="price">${formatujCene(cenaInternetBrutto)}</td>` : ''}</tr>` : ''}
-                        ${pokazCenaAllegro ? `<tr class="price-box price-final_price"><td style="width: 33%" class="price-label">Allegro</td><td style="width: 33%" class="price">${formatujCene(cenaAllegroNetto)}</td>${pokazCenyBrutto ? `<td style="width: 33%" class="price">${formatujCene(cenaAllegroBrutto)}</td>` : ''}</tr>` : ''}
+                        ${pokazCenaKatalogowa ? `<tr><td>Katalogowa</td><td style="font-weight: bold;" data-price="${cenaKatalogowaNetto}">${formatujCene(cenaKatalogowaNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaKatalogowaBrutto}">${formatujCene(cenaKatalogowaBrutto)}</td>` : ''}</tr>` : ''}
+                        ${pokazCenaZakupu ? `<tr><td>Zakupu</td><td style="font-weight: bold;" data-price="${cenaZakupuNetto}">${formatujCene(cenaZakupuNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaZakupuBrutto}">${formatujCene(cenaZakupuBrutto)}</td>` : ''}</tr>` : ''}
+                        ${pokazCenaInternet ? `<tr><td>Internet</td><td style="font-weight: bold;" data-price="${cenaInternetNetto}">${formatujCene(cenaInternetNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaInternetBrutto}">${formatujCene(cenaInternetBrutto)}</td>` : ''}</tr>` : ''}
+                        ${pokazCenaAllegro ? `<tr><td>Allegro</td><td style="font-weight: bold;" data-price="${cenaAllegroNetto}">${formatujCene(cenaAllegroNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaAllegroBrutto}">${formatujCene(cenaAllegroBrutto)}</td>` : ''}</tr>` : ''}
                     </table>
                 `;
 
                 priceBox.parentElement.insertBefore(newPriceBox, priceBox);
                 console.log("Nowy div z cenami został dodany.");
+
+                // Dodaj nasłuchiwacz zdarzenia do kopiowania ceny
+                dodajNasluchiwaczeCen(newPriceBox);
             } else {
                 console.error("Nie udało się znaleźć elementów ceny (katalogowej lub zakupu).");
             }
         });
     }
 
-    // Event listeners do dynamicznej zmiany widoczności cen po zmianie ustawień
-    document.body.addEventListener('change', uruchomSkrypt);
+    // Funkcja do dodawania nasłuchiwaczy do elementów cen
+    function dodajNasluchiwaczeCen(priceBox) {
+        priceBox.querySelectorAll('td[data-price]').forEach(priceElement => {
+            priceElement.addEventListener('click', function () {
+                const cena = priceElement.getAttribute('data-price');
+                if (cena) {
+                    navigator.clipboard.writeText(cena).then(() => { // Kopiowanie bez "zł"
+                        console.log(`Cena ${formatujCene(cena)} skopiowana do schowka.`);
+                        pokazPopup(formatujCene(cena)); // Wywołanie funkcji do wyświetlenia popup
+                    }).catch(err => {
+                        console.error('Nie udało się skopiować ceny: ', err);
+                    });
+                } else {
+                    console.error('Cena jest null, nie można skopiować.');
+                }
+            });
+        });
+    }
+
+    function pokazPopup(cena) {
+        // Funkcja do wyświetlania popup
+        let popup = document.createElement('div');
+        popup.className = 'popup';
+        popup.innerText = `Cena skopiowana: ${cena}`;
+        popup.style.position = 'fixed';
+        popup.style.top = '20px'; // Zmiana na górę strony
+        popup.style.right = '20px';
+        popup.style.backgroundColor = '#4CAF50';
+        popup.style.color = 'white';
+        popup.style.padding = '10px';
+        popup.style.borderRadius = '5px';
+        popup.style.zIndex = '1001';
+        document.body.appendChild(popup);
+        setTimeout(() => {
+            popup.remove();
+        }, 3000);
+    }
 })();

@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         PIM ORNO Custom Price Box
 // @namespace    http://tampermonkey.net/
-// @version      1.1
-// @description  Ukrywa wszystkie oryginalne divy ceny i wstawia nowe divy z niestandardowymi cenami i rabatami dla każdego produktu na stronie z możliwością zarządzania widocznością cen z okienka ustawień.
-// @author       Łukasz Kordos
+// @version      1.2
+// @description  Ukrywa wszystkie oryginalne divy ceny i wstawia nowe divy z niestandardowymi cenami i rabatami dla każdego produktu na stronie z możliwością zarządzania widocznością cen z okienka ustawień. Teraz z możliwością skalowania i przeciągania okienka ustawień oraz zapamiętywania jego pozycji i rozmiaru.
+// @author       Pa-Jong
 // @match        https://b2b.orno.pl/*
 // @require      https://pa-jong.github.io/ornoB2Bpricebox/ornoB2Bcustomprice.user.js
 // @updateURL    https://pa-jong.github.io/ornoB2Bpricebox/update.json
-// @downloadURL  https://pa-jong.github.io/ornoB2Bpricebox/ornoB2Bcustomprice.user.js // URL to the actual userscript
+// @downloadURL  https://pa-jong.github.io/ornoB2Bpricebox/ornoB2Bcustomprice.user.js
 // @grant        none
 // ==/UserScript==
 
@@ -21,16 +21,26 @@
     };
 
     function dodajOkienkoUstawien() {
+        // Sprawdź, czy są zapisane ustawienia pozycji i rozmiaru
+        let savedX = localStorage.getItem('ustawieniaDivX') || '10px';
+        let savedY = localStorage.getItem('ustawieniaDivY') || '200px';
+        let savedWidth = localStorage.getItem('ustawieniaDivWidth') || '200px';
+        let savedHeight = localStorage.getItem('ustawieniaDivHeight') || 'auto';
+
         // Stwórz pływające okienko ustawień
         let ustawieniaDiv = document.createElement('div');
         ustawieniaDiv.style.position = 'fixed';
-        ustawieniaDiv.style.top = '200px';
-        ustawieniaDiv.style.right = '10px';
+        ustawieniaDiv.style.top = savedY;
+        ustawieniaDiv.style.left = savedX;
+        ustawieniaDiv.style.width = savedWidth;
+        ustawieniaDiv.style.height = savedHeight;
         ustawieniaDiv.style.backgroundColor = '#f4f4f4';
         ustawieniaDiv.style.border = '1px solid #ccc';
         ustawieniaDiv.style.padding = '10px';
         ustawieniaDiv.style.zIndex = '1000';
-        ustawieniaDiv.style.width = '200px';
+        ustawieniaDiv.style.resize = 'both';
+        ustawieniaDiv.style.overflow = 'auto';
+        ustawieniaDiv.id = 'ustawieniaDiv';
 
         ustawieniaDiv.innerHTML = `
             <strong>Ustawienia cen:</strong><br>
@@ -42,6 +52,38 @@
         `;
 
         document.body.appendChild(ustawieniaDiv);
+
+        // Dodaj funkcjonalność przeciągania
+        ustawieniaDiv.addEventListener('mousedown', function(e) {
+            // Sprawdź, czy użytkownik próbuje skalować
+            let rect = ustawieniaDiv.getBoundingClientRect();
+            let isResizing = e.clientX > rect.right - 10 || e.clientY > rect.bottom - 10; // Sprawdza, czy kliknięto blisko krawędzi
+
+            if (!isResizing && e.target === ustawieniaDiv) {
+                e.preventDefault();
+                let offsetX = e.clientX - ustawieniaDiv.getBoundingClientRect().left;
+                let offsetY = e.clientY - ustawieniaDiv.getBoundingClientRect().top;
+
+                function onMouseMove(e) {
+                    ustawieniaDiv.style.left = `${e.clientX - offsetX}px`;
+                    ustawieniaDiv.style.top = `${e.clientY - offsetY}px`;
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+
+                document.addEventListener('mouseup', function() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    localStorage.setItem('ustawieniaDivX', ustawieniaDiv.style.left);
+                    localStorage.setItem('ustawieniaDivY', ustawieniaDiv.style.top);
+                }, { once: true });
+            }
+        });
+
+        // Zapisz nowy rozmiar okienka po jego zmianie
+        ustawieniaDiv.addEventListener('mouseup', function() {
+            localStorage.setItem('ustawieniaDivWidth', ustawieniaDiv.style.width);
+            localStorage.setItem('ustawieniaDivHeight', ustawieniaDiv.style.height);
+        });
     }
 
     function uruchomSkrypt() {

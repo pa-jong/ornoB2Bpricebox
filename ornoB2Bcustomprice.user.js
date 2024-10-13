@@ -20,8 +20,6 @@
         uruchomSkrypt();
     };
 
-
-
     function dodajOkienkoUstawien() {
         // Sprawdź, czy są zapisane ustawienia pozycji i rozmiaru
         let savedX = localStorage.getItem('ustawieniaDivX') || '10px';
@@ -52,6 +50,19 @@
         `;
 
         document.body.appendChild(ustawieniaDiv);
+
+        // Przywróć zapisane stany checkboxów po dodaniu elementów do DOM
+        const checkboxIds = ['pokazCenaKatalogowa', 'pokazCenaZakupu', 'pokazCenaInternet', 'pokazCenaAllegro', 'pokazCenyBrutto'];
+        checkboxIds.forEach(id => {
+            const checkbox = document.getElementById(id);
+            if (checkbox) {
+                checkbox.checked = localStorage.getItem(id) === 'true'; // Przywracanie ustawień
+                checkbox.addEventListener('change', function() {
+                    localStorage.setItem(id, checkbox.checked); // Zapisywanie ustawień
+                    uruchomSkrypt(); // Ponowne uruchomienie skryptu po zmianie
+                });
+            }
+        });
 
         // Dodaj przezroczysty kwadracik do skalowania
         let resizer = document.createElement('div');
@@ -101,11 +112,6 @@
                     localStorage.setItem('ustawieniaDivY', ustawieniaDiv.style.top);
                 }, { once: true });
             }
-        });
-
-        // Nasłuchuj zmiany w checkboxach
-        ustawieniaDiv.querySelectorAll('input[type=checkbox]').forEach(checkbox => {
-            checkbox.addEventListener('change', uruchomSkrypt);
         });
     }
 

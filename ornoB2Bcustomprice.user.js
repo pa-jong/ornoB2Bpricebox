@@ -20,6 +20,8 @@
         uruchomSkrypt();
     };
 
+
+
     function dodajOkienkoUstawien() {
         // Sprawdź, czy są zapisane ustawienia pozycji i rozmiaru
         let savedX = localStorage.getItem('ustawieniaDivX') || '10px';
@@ -38,8 +40,6 @@
         ustawieniaDiv.style.border = '1px solid #ccc';
         ustawieniaDiv.style.padding = '10px';
         ustawieniaDiv.style.zIndex = '1000';
-        ustawieniaDiv.style.resize = 'both';
-        ustawieniaDiv.style.overflow = 'hidden';
         ustawieniaDiv.id = 'ustawieniaDiv';
 
         ustawieniaDiv.innerHTML = `
@@ -52,6 +52,34 @@
         `;
 
         document.body.appendChild(ustawieniaDiv);
+
+        // Dodaj przezroczysty kwadracik do skalowania
+        let resizer = document.createElement('div');
+        resizer.style.width = '10px';
+        resizer.style.height = '10px';
+        resizer.style.background = 'transparent';
+        resizer.style.position = 'absolute';
+        resizer.style.right = '0';
+        resizer.style.bottom = '0';
+        resizer.style.cursor = 'nwse-resize';
+        ustawieniaDiv.appendChild(resizer);
+
+        resizer.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+
+            function onMouseMove(e) {
+                ustawieniaDiv.style.width = `${e.clientX - ustawieniaDiv.getBoundingClientRect().left}px`;
+                ustawieniaDiv.style.height = `${e.clientY - ustawieniaDiv.getBoundingClientRect().top}px`;
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+
+            document.addEventListener('mouseup', function() {
+                document.removeEventListener('mousemove', onMouseMove);
+                localStorage.setItem('ustawieniaDivWidth', ustawieniaDiv.style.width);
+                localStorage.setItem('ustawieniaDivHeight', ustawieniaDiv.style.height);
+            }, { once: true });
+        });
 
         // Dodaj funkcjonalność przeciągania
         ustawieniaDiv.addEventListener('mousedown', function(e) {
@@ -71,8 +99,6 @@
                     document.removeEventListener('mousemove', onMouseMove);
                     localStorage.setItem('ustawieniaDivX', ustawieniaDiv.style.left);
                     localStorage.setItem('ustawieniaDivY', ustawieniaDiv.style.top);
-                    localStorage.setItem('ustawieniaDivWidth', ustawieniaDiv.style.width);
-                    localStorage.setItem('ustawieniaDivHeight', ustawieniaDiv.style.height);
                 }, { once: true });
             }
         });
@@ -142,10 +168,10 @@
                 newPriceBox.className = 'custom-price-box';
                 newPriceBox.innerHTML = `
                     <table class="price-table">
-                        ${pokazCenaKatalogowa ? `<tr><td>Katalogowa</td><td style="font-weight: bold;" data-price="${cenaKatalogowaNetto}">${formatujCene(cenaKatalogowaNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaKatalogowaBrutto}">${formatujCene(cenaKatalogowaBrutto)}</td>` : ''}</tr>` : ''}
-                        ${pokazCenaZakupu ? `<tr><td>Zakupu</td><td style="font-weight: bold;" data-price="${cenaZakupuNetto}">${formatujCene(cenaZakupuNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaZakupuBrutto}">${formatujCene(cenaZakupuBrutto)}</td>` : ''}</tr>` : ''}
-                        ${pokazCenaInternet ? `<tr><td>Internet</td><td style="font-weight: bold;" data-price="${cenaInternetNetto}">${formatujCene(cenaInternetNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaInternetBrutto}">${formatujCene(cenaInternetBrutto)}</td>` : ''}</tr>` : ''}
-                        ${pokazCenaAllegro ? `<tr><td>Allegro</td><td style="font-weight: bold;" data-price="${cenaAllegroNetto}">${formatujCene(cenaAllegroNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaAllegroBrutto}">${formatujCene(cenaAllegroBrutto)}</td>` : ''}</tr>` : ''}
+                        ${pokazCenaKatalogowa ? `<tr><td>Katalogowa</td><td style="font-weight: bold;" data-price="${cenaKatalogowaNetto}">${formatujCene(cenaKatalogowaNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaKatalogowaBrutto}">${formatujCene(cenaKatalogowaBrutto)}</td>` : ''}</tr>` : '' }
+                        ${pokazCenaZakupu ? `<tr><td>Zakupu</td><td style="font-weight: bold;" data-price="${cenaZakupuNetto}">${formatujCene(cenaZakupuNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaZakupuBrutto}">${formatujCene(cenaZakupuBrutto)}</td>` : ''}</tr>` : '' }
+                        ${pokazCenaInternet ? `<tr><td>Internet</td><td style="font-weight: bold;" data-price="${cenaInternetNetto}">${formatujCene(cenaInternetNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaInternetBrutto}">${formatujCene(cenaInternetBrutto)}</td>` : ''}</tr>` : '' }
+                        ${pokazCenaAllegro ? `<tr><td>Allegro</td><td style="font-weight: bold;" data-price="${cenaAllegroNetto}">${formatujCene(cenaAllegroNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaAllegroBrutto}">${formatujCene(cenaAllegroBrutto)}</td>` : ''}</tr>` : '' }
                     </table>
                 `;
 
@@ -196,7 +222,5 @@
         setTimeout(() => {
             popup.remove();
         }, 3000);
-    }
-})();
     }
 })();

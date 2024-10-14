@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         PIM ORNO Custom Price Box
+// @name         PIM ORNO Custom Price Box with Notatnik
 // @namespace    http://tampermonkey.net/
-// @version      1.2
-// @description  Skrypt jest przeznaczony do modyfikacji wyświetlania cen na stronie https://b2b.orno.pl. Ukrywa oryginalne elementy ceny i dodaje nowe z niestandardowymi cenami i rabatami. Umożliwia użytkownikowi dostosowanie widoczności różnych cen oraz posiada funkcjonalność przeciągania i skalowania okienka ustawień oraz zapamiętuje jego pozycję i rozmiar. Jeśli masz dodatkowe pytania lub potrzebujesz modyfikacji, daj znać!
+// @version      1.4
+// @description  Skrypt do modyfikacji wyświetlania cen na stronie https://b2b.orno.pl. Ukrywa oryginalne elementy i dodaje nowe z niestandardowymi cenami i rabatami. Dodaje notatnik z możliwością edycji, przeciągania i zapisywania ustawień lokalnie. Umożliwia użytkownikowi dostosowanie widoczności różnych cen oraz posiada funkcjonalność przeciągania i skalowania okienka ustawień oraz notatnika, a także zapamiętuje ich pozycję i rozmiar.
 // @author       Pa-Jong
 // @match        https://b2b.orno.pl/*
 // @require      https://pa-jong.github.io/ornoB2Bpricebox/ornoB2Bcustomprice.user.js
@@ -24,7 +24,7 @@
         // Sprawdź, czy są zapisane ustawienia pozycji i rozmiaru
         let savedX = localStorage.getItem('ustawieniaDivX') || '10px';
         let savedY = localStorage.getItem('ustawieniaDivY') || '200px';
-        let savedWidth = localStorage.getItem('ustawieniaDivWidth') || '200px';
+        let savedWidth = localStorage.getItem('ustawieniaDivWidth') || '250px';
         let savedHeight = localStorage.getItem('ustawieniaDivHeight') || 'auto';
 
         // Stwórz pływające okienko ustawień
@@ -36,29 +36,41 @@
         ustawieniaDiv.style.height = savedHeight;
         ustawieniaDiv.style.backgroundColor = '#f4f4f4';
         ustawieniaDiv.style.border = '1px solid #ccc';
-        ustawieniaDiv.style.padding = '10px';
+        ustawieniaDiv.style.padding = '5px';
+        ustawieniaDiv.style.padding = "25px 5px 5px 5px";
         ustawieniaDiv.style.zIndex = '1000';
         ustawieniaDiv.id = 'ustawieniaDiv';
+        ustawieniaDiv.style.overflow = 'auto'; // Dodane, aby zawartość była przewijalna, jeśli zajmie dużo miejsca
+        ustawieniaDiv.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
 
         ustawieniaDiv.innerHTML = `
-            <strong>Ustawienia cen:</strong><br>
             <label><input type="checkbox" id="pokazCenaKatalogowa" checked> Fabryczna</label><br>
             <label><input type="checkbox" id="pokazCenaZakupu"> Zakupu</label><br>
             <label><input type="checkbox" id="pokazCenaInternet" checked> Internet</label><br>
             <label><input type="checkbox" id="pokazCenaAllegro" checked> Allegro</label><br>
             <label><input type="checkbox" id="pokazCenyBrutto" checked> Pokaż brutto</label><br>
+            <label><input type="checkbox" id="pokazNotatnik"> Notatnik</label><br>
         `;
 
         document.body.appendChild(ustawieniaDiv);
 
         // Przywróć zapisane stany checkboxów po dodaniu elementów do DOM
-        const checkboxIds = ['pokazCenaKatalogowa', 'pokazCenaZakupu', 'pokazCenaInternet', 'pokazCenaAllegro', 'pokazCenyBrutto'];
+        const checkboxIds = [
+            'pokazCenaKatalogowa',
+            'pokazCenaZakupu',
+            'pokazCenaInternet',
+            'pokazCenaAllegro',
+            'pokazCenyBrutto',
+            'pokazNotatnik'
+        ];
+
         checkboxIds.forEach(id => {
             const checkbox = document.getElementById(id);
             if (checkbox) {
                 checkbox.checked = localStorage.getItem(id) === 'true'; // Przywracanie ustawień
                 checkbox.addEventListener('change', function() {
                     localStorage.setItem(id, checkbox.checked); // Zapisywanie ustawień
+                    if (id === 'pokazNotatnik') toggleNotatnik(); // Toggle notatnik
                     uruchomSkrypt(); // Ponowne uruchomienie skryptu po zmianie
                 });
             }
@@ -66,8 +78,8 @@
 
         // Dodaj przezroczysty kwadracik do skalowania
         let resizer = document.createElement('div');
-        resizer.style.width = '10px';
-        resizer.style.height = '10px';
+        resizer.style.width = '15px';
+        resizer.style.height = '15px';
         resizer.style.background = 'transparent';
         resizer.style.position = 'absolute';
         resizer.style.right = '0';
@@ -93,26 +105,138 @@
         });
 
         // Dodaj funkcjonalność przeciągania
-        ustawieniaDiv.addEventListener('mousedown', function(e) {
-            if (e.target === ustawieniaDiv) {
-                e.preventDefault();
-                let offsetX = e.clientX - ustawieniaDiv.getBoundingClientRect().left;
-                let offsetY = e.clientY - ustawieniaDiv.getBoundingClientRect().top;
+        let ustawieniaHeader = document.createElement('div');
+        ustawieniaHeader.style.width = '100%';
+        ustawieniaHeader.style.height = '20px';
+        ustawieniaHeader.style.cursor = 'move';
+        ustawieniaHeader.style.position = 'absolute';
+        ustawieniaHeader.style.top = '0';
+        ustawieniaHeader.style.left = '0';
+        ustawieniaHeader.style.backgroundColor = '#ddd';
+        ustawieniaHeader.style.display = 'flex';
+        ustawieniaHeader.style.alignItems = 'center';
+        ustawieniaHeader.style.padding = '0 5px';
+        ustawieniaHeader.style.boxSizing = 'border-box';
 
-                function onMouseMove(e) {
-                    ustawieniaDiv.style.left = `${e.clientX - offsetX}px`;
-                    ustawieniaDiv.style.top = `${e.clientY - offsetY}px`;
-                }
+        ustawieniaHeader.innerHTML = `<span style="flex-grow: 1; user-select: none;">Ustawienia</span>`;
+        ustawieniaDiv.insertBefore(ustawieniaHeader, ustawieniaDiv.firstChild);
 
-                document.addEventListener('mousemove', onMouseMove);
+        ustawieniaHeader.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            let offsetX = e.clientX - ustawieniaDiv.getBoundingClientRect().left;
+            let offsetY = e.clientY - ustawieniaDiv.getBoundingClientRect().top;
 
-                document.addEventListener('mouseup', function() {
-                    document.removeEventListener('mousemove', onMouseMove);
-                    localStorage.setItem('ustawieniaDivX', ustawieniaDiv.style.left);
-                    localStorage.setItem('ustawieniaDivY', ustawieniaDiv.style.top);
-                }, { once: true });
+            function onMouseMove(e) {
+                ustawieniaDiv.style.left = `${e.clientX - offsetX}px`;
+                ustawieniaDiv.style.top = `${e.clientY - offsetY}px`;
             }
+
+            document.addEventListener('mousemove', onMouseMove);
+
+            document.addEventListener('mouseup', function() {
+                document.removeEventListener('mousemove', onMouseMove);
+                localStorage.setItem('ustawieniaDivX', ustawieniaDiv.style.left);
+                localStorage.setItem('ustawieniaDivY', ustawieniaDiv.style.top);
+            }, { once: true });
         });
+
+        // Wywołaj toggleNotatnik w celu wstępnej konfiguracji
+        toggleNotatnik();
+    }
+
+    function toggleNotatnik() {
+        const isVisible = document.getElementById('pokazNotatnik').checked;
+        if (isVisible) {
+            if (!document.getElementById('notatnikDiv')) {
+                dodajNotatnik();
+            }
+        } else {
+            const notatnikDiv = document.getElementById('notatnikDiv');
+            if (notatnikDiv) notatnikDiv.remove();
+        }
+    }
+
+    function dodajNotatnik() {
+        // Sprawdź, czy są zapisane ustawienia pozycji i rozmiaru
+        let savedX = localStorage.getItem('notatnikDivX') || '300px';
+        let savedY = localStorage.getItem('notatnikDivY') || '200px';
+        let savedWidth = localStorage.getItem('notatnikDivWidth') || '250px';
+        let savedHeight = localStorage.getItem('notatnikDivHeight') || '200px';
+        let savedContent = localStorage.getItem('notatnikContent') || '';
+
+        // Stwórz pływające okienko notatnika
+        let notatnikDiv = document.createElement('div');
+        notatnikDiv.style.position = 'fixed';
+        notatnikDiv.style.top = savedY;
+        notatnikDiv.style.left = savedX;
+        notatnikDiv.style.width = savedWidth;
+        notatnikDiv.style.height = savedHeight;
+        notatnikDiv.style.backgroundColor = '#ffffff';
+        notatnikDiv.style.border = '1px solid #ccc';
+        notatnikDiv.style.zIndex = '1000';
+        notatnikDiv.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
+        notatnikDiv.style.resize = 'both';
+        notatnikDiv.style.overflow = 'auto';
+        notatnikDiv.id = 'notatnikDiv';
+
+        // Nagłówek do przeciągania
+        let naglowek = document.createElement('div');
+        naglowek.style.width = '100%';
+        naglowek.style.height = '25px';
+        naglowek.style.cursor = 'move';
+        naglowek.style.backgroundColor = '#ddd';
+        naglowek.style.position = 'absolute';
+        naglowek.style.top = '0';
+        naglowek.style.left = '0';
+        naglowek.style.display = 'flex';
+        naglowek.style.alignItems = 'center';
+        naglowek.style.padding = '0 5px';
+        naglowek.style.boxSizing = 'border-box';
+        naglowek.innerHTML = `<span style="flex-grow: 1; user-select: none;">Notatnik</span>`;
+        notatnikDiv.appendChild(naglowek);
+
+        // Edytowalny textarea do notatnika
+        let textarea = document.createElement('textarea');
+        textarea.style.width = '100%';
+        textarea.style.height = 'calc(100% - 25px)';
+        textarea.style.boxSizing = 'border-box';
+        textarea.style.border = 'none';
+        textarea.style.outline = 'none';
+        textarea.style.resize = 'none';
+        textarea.style.padding = "25px 5px 5px 5px";
+        textarea.value = savedContent;
+        textarea.addEventListener('input', function() {
+            localStorage.setItem('notatnikContent', textarea.value);
+        });
+        notatnikDiv.appendChild(textarea);
+
+        // Dodaj funkcje przeciągania i skalowania
+        naglowek.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            let offsetX = e.clientX - notatnikDiv.getBoundingClientRect().left;
+            let offsetY = e.clientY - notatnikDiv.getBoundingClientRect().top;
+
+            function onMouseMove(e) {
+                notatnikDiv.style.left = `${e.clientX - offsetX}px`;
+                notatnikDiv.style.top = `${e.clientY - offsetY}px`;
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+
+            document.addEventListener('mouseup', function() {
+                document.removeEventListener('mousemove', onMouseMove);
+                localStorage.setItem('notatnikDivX', notatnikDiv.style.left);
+                localStorage.setItem('notatnikDivY', notatnikDiv.style.top);
+            }, { once: true });
+        });
+
+        // Obsługa skalowania przy użyciu natywnego resize
+        notatnikDiv.addEventListener('mouseup', function() {
+            localStorage.setItem('notatnikDivWidth', notatnikDiv.style.width);
+            localStorage.setItem('notatnikDivHeight', notatnikDiv.style.height);
+        });
+
+        document.body.appendChild(notatnikDiv);
     }
 
     // Funkcja formatująca cenę
@@ -127,7 +251,7 @@
     }
 
     function uruchomSkrypt() {
-        console.log("Uruchamianie głównej funkcji skryptu...");
+        console.log("Uruchomienie skryptu modyfikującego wyświetlanie cen...");
 
         let priceBoxes = document.querySelectorAll('.price-box.price-final_price');
 
@@ -172,12 +296,37 @@
 
                 let newPriceBox = document.createElement('div');
                 newPriceBox.className = 'custom-price-box';
+                newPriceBox.style.margin = '10px 0'; // Dodane dla lepszego odstępu
                 newPriceBox.innerHTML = `
-                    <table class="price-table">
-                        ${pokazCenaKatalogowa ? `<tr><td>Katalogowa</td><td style="font-weight: bold;" data-price="${cenaKatalogowaNetto}">${formatujCene(cenaKatalogowaNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaKatalogowaBrutto}">${formatujCene(cenaKatalogowaBrutto)}</td>` : ''}</tr>` : '' }
-                        ${pokazCenaZakupu ? `<tr><td>Zakupu</td><td style="font-weight: bold;" data-price="${cenaZakupuNetto}">${formatujCene(cenaZakupuNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaZakupuBrutto}">${formatujCene(cenaZakupuBrutto)}</td>` : ''}</tr>` : '' }
-                        ${pokazCenaInternet ? `<tr><td>Internet</td><td style="font-weight: bold;" data-price="${cenaInternetNetto}">${formatujCene(cenaInternetNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaInternetBrutto}">${formatujCene(cenaInternetBrutto)}</td>` : ''}</tr>` : '' }
-                        ${pokazCenaAllegro ? `<tr><td>Allegro</td><td style="font-weight: bold;" data-price="${cenaAllegroNetto}">${formatujCene(cenaAllegroNetto)}</td>${pokazCenyBrutto ? `<td style="font-weight: bold;" data-price="${cenaAllegroBrutto}">${formatujCene(cenaAllegroBrutto)}</td>` : ''}</tr>` : '' }
+                    <table class="price-table" style="width: 100%; border-collapse: collapse;">
+                        ${pokazCenaKatalogowa ? `
+                            <tr>
+                                <td style="padding: 5px;">Katalogowa</td>
+                                <td style="padding: 5px; font-weight: bold;" data-price="${cenaKatalogowaNetto}">${formatujCene(cenaKatalogowaNetto)}</td>
+                                ${pokazCenyBrutto ? `<td style="padding: 5px; font-weight: bold;" data-price="${cenaKatalogowaBrutto}">${formatujCene(cenaKatalogowaBrutto)}</td>` : ''}
+                            </tr>
+                        ` : '' }
+                        ${pokazCenaZakupu ? `
+                            <tr>
+                                <td style="padding: 5px;">Zakupu</td>
+                                <td style="padding: 5px; font-weight: bold;" data-price="${cenaZakupuNetto}">${formatujCene(cenaZakupuNetto)}</td>
+                                ${pokazCenyBrutto ? `<td style="padding: 5px; font-weight: bold;" data-price="${cenaZakupuBrutto}">${formatujCene(cenaZakupuBrutto)}</td>` : ''}
+                            </tr>
+                        ` : '' }
+                        ${pokazCenaInternet ? `
+                            <tr>
+                                <td style="padding: 5px;">Internet</td>
+                                <td style="padding: 5px; font-weight: bold;" data-price="${cenaInternetNetto}">${formatujCene(cenaInternetNetto)}</td>
+                                ${pokazCenyBrutto ? `<td style="padding: 5px; font-weight: bold;" data-price="${cenaInternetBrutto}">${formatujCene(cenaInternetBrutto)}</td>` : ''}
+                            </tr>
+                        ` : '' }
+                        ${pokazCenaAllegro ? `
+                            <tr>
+                                <td style="padding: 5px;">Allegro</td>
+                                <td style="padding: 5px; font-weight: bold;" data-price="${cenaAllegroNetto}">${formatujCene(cenaAllegroNetto)}</td>
+                                ${pokazCenyBrutto ? `<td style="padding: 5px; font-weight: bold;" data-price="${cenaAllegroBrutto}">${formatujCene(cenaAllegroBrutto)}</td>` : ''}
+                            </tr>
+                        ` : '' }
                     </table>
                 `;
 
@@ -212,8 +361,12 @@
     }
 
     function pokazPopup(cena) {
+        // Sprawdź, czy popup już istnieje
+        if (document.getElementById('cenaPopup')) return;
+
         // Funkcja do wyświetlania popup
         let popup = document.createElement('div');
+        popup.id = 'cenaPopup';
         popup.className = 'popup';
         popup.innerText = `Cena skopiowana: ${cena}`;
         popup.style.position = 'fixed';
@@ -224,9 +377,10 @@
         popup.style.padding = '10px';
         popup.style.borderRadius = '5px';
         popup.style.zIndex = '1001';
+        popup.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
         document.body.appendChild(popup);
         setTimeout(() => {
             popup.remove();
-        }, 3000);
+        }, 1000);
     }
 })();

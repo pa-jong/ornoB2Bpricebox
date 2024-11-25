@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PIM ORNO Custom Price Box with Notatnik
 // @namespace    http://tampermonkey.net/
-// @version      1.4
-// @description  Skrypt do modyfikacji wyświetlania cen na stronie https://b2b.orno.pl. Ukrywa oryginalne elementy i dodaje nowe z niestandardowymi cenami i rabatami. Dodaje notatnik z możliwością edycji, przeciągania i zapisywania ustawień lokalnie. Umożliwia użytkownikowi dostosowanie widoczności różnych cen oraz posiada funkcjonalność przeciągania i skalowania okienka ustawień oraz notatnika, a także zapamiętuje ich pozycję i rozmiar.
+// @version      1.4.1
+// @description  Skrypt do modyfikacji wyświetlania cen na stronie https://b2b.orno.pl. Ukrywa oryginalne elementy ceny, dodaje nowe z niestandardowymi cenami i rabatami oraz notatnik z możliwością edycji, przeciągania i zapisywania ustawień lokalnie. Umożliwia użytkownikowi dostosowanie widoczności różnych cen oraz posiada funkcjonalność przeciągania i skalowania okienka ustawień oraz notatnika, a także zapamiętuje ich pozycję i rozmiar.
 // @author       Pa-Jong
 // @match        https://b2b.orno.pl/*
 // @require      https://pa-jong.github.io/ornoB2Bpricebox/ornoB2Bcustomprice.user.js
@@ -270,6 +270,7 @@
             if (cenaKatalogowaElement && cenaZakupuElement) {
                 let cenaKatalogowaNetto = parseFloat(cenaKatalogowaElement.getAttribute('data-price-amount'));
                 let cenaZakupuNetto = parseFloat(cenaZakupuElement.getAttribute('data-price-amount'));
+                let rabatZakupu = ((1 - (cenaZakupuNetto / cenaKatalogowaNetto)) * 100).toFixed(2);
 
                 let rabatInternet = 0.33;
                 let rabatAllegro = 0.30;
@@ -287,6 +288,7 @@
                 console.log("Cena zakupu netto: ", cenaZakupuNetto);
                 console.log("Cena internet netto: ", cenaInternetNetto);
                 console.log("Cena Allegro netto: ", cenaAllegroNetto);
+                console.log("Rabat od ceny katalogowej do zakupu: ", rabatZakupu + "%");
 
                 let pokazCenaKatalogowa = document.getElementById('pokazCenaKatalogowa').checked;
                 let pokazCenaZakupu = document.getElementById('pokazCenaZakupu').checked;
@@ -308,11 +310,12 @@
                         ` : '' }
                         ${pokazCenaZakupu ? `
                             <tr>
-                                <td style="padding: 5px;">Zakupu</td>
+                                <td style="padding: 5px;">Zakupu (${rabatZakupu}%)</td>
                                 <td style="padding: 5px; font-weight: bold;" data-price="${cenaZakupuNetto}">${formatujCene(cenaZakupuNetto)}</td>
                                 ${pokazCenyBrutto ? `<td style="padding: 5px; font-weight: bold;" data-price="${cenaZakupuBrutto}">${formatujCene(cenaZakupuBrutto)}</td>` : ''}
                             </tr>
                         ` : '' }
+
                         ${pokazCenaInternet ? `
                             <tr>
                                 <td style="padding: 5px;">Internet</td>
